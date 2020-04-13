@@ -5,11 +5,13 @@ from tkinter import messagebox
 import gspread
 from oauth2client.service_account import ServiceAccountCredentials
 import inspect
+import qrReader
+import time
 
 #data from first pyscript
 scope = ["https://www.googleapis.com/auth/spreadsheets", "https://www.googleapis.com/auth/drive.file", "https://www.googleapis.com/auth/drive"]
 
-creds = ServiceAccountCredentials.from_json_keyfile_name("hehe cant look here either",scope)
+creds = ServiceAccountCredentials.from_json_keyfile_name("C:/Users/Hunter/Documents/Python Scripts/demo/credentials1.json",scope)
 
 client = gspread.authorize(creds)
 
@@ -178,7 +180,9 @@ def editSpool():
     except:
         updateStatusText("Unable to update "+str(IDEntry.get()) +" Data!")
 
-
+def getQRID():
+    setEntryText(IDEntry, qrReader.getQR())
+    updateStatusText("QR code has been scanned!")
 #create objects
 window = Tk() #create the main window object
 selectorText = Label(window, text="Select Mode: ")
@@ -196,7 +200,7 @@ viewSpool = Radiobutton(window,text='View Spool Data', value=2, variable=mode, c
 editSpool = Radiobutton(window,text='Edit Spool', value=3, variable=mode, command=updateMode)
 delSpool = Radiobutton(window,text='Delete Spool', value=4, variable=mode, command=updateMode)
 
-
+scanQR = Button(window, text="Scan QR Code", command=getQRID)
 IDText = Label(window, text="Spool ID:")
 IDEntry = Entry(window, width=25)
 
@@ -209,7 +213,7 @@ materialEntry = Combobox(window, width=22, values=("PLA","ABS","PETG","Nylon","C
 colorText = Label(window, text="Color:")
 colorEntry = Entry(window, width=25)
 
-matWeight = Label(window, text="Filament Weight:")
+matText = Label(window, text="Filament Weight:")
 matEntry = Entry(window, width=25)
 
 costPerSpoolText = Label(window, text="Cost per Spool:")
@@ -227,55 +231,39 @@ spoolActive = Combobox(window, width=22, values=("Deactive", "Active"))
 commentText = Label(window, text="Comments:")
 commentEntry = Entry(window, width=25)
 
+
 entryList = [IDEntry, dateEntry, materialEntry, colorEntry, matEntry, costPerSpoolEntry, spoolWeightEntry, manufacturerEntry, spoolActive, commentEntry]
+textList  = [IDText, dateText, materialText, colorText, matText, costPerSpoolText, spoolWeightText, manufacturerText, spoolActiveText, commentText]
+radButtonList = [newSpool, viewSpool, editSpool, delSpool]
+doButtonList = [uploadNew, getSpool, applyChanges, deleteSpool]
+
 #object methods
 window.title("Filament Storage Client")
-window.geometry('500x1000')
+window.geometry('500x600')
 
 #locations of objects
-newSpool.grid(column=0, row=1)
-viewSpool.grid(column=1, row=1)
-editSpool.grid(column=2, row=1)
-delSpool.grid(column=3, row=1)
 selectorText.grid(column=0, row=0)
+scanQR.grid(column=2, row=3)
+colVar = 0
+for button in radButtonList:
+    button.grid(column=colVar, row=1)
+    colVar += 1
 
-IDText.grid(column=0, row=3)
-IDEntry.grid(column=1, row=3)
+rowVar = 3
+for text, entry in zip(textList, entryList):
+    text.grid(column=0, row = rowVar)
+    entry.grid(column=1, row = rowVar)
+    rowVar+=2
 
-dateText.grid(column=0, row=5)
-dateEntry.grid(column=1, row=5)
+colVar = 0
+for button in doButtonList:
+    button.grid(column=colVar, row=23)
+    colVar +=1
 
-materialText.grid(column=0, row=7)
-materialEntry.grid(column=1, row=7)
-
-colorText.grid(column=0, row=9)
-colorEntry.grid(column=1, row=9)
-
-matWeight.grid(column=0, row=11)
-matEntry.grid(column=1, row=11)
-
-costPerSpoolText.grid(column=0, row=13)
-costPerSpoolEntry.grid(column=1, row=13)
-
-spoolWeightText.grid(column=0, row=15)
-spoolWeightEntry.grid(column=1, row=15)
-
-manufacturerText.grid(column=0, row=17)
-manufacturerEntry.grid(column=1, row=17)
-
-spoolActiveText.grid(column=0, row=19)
-spoolActive.grid(column=1, row=19)
-
-
-commentText.grid(column=0, row=21)
-commentEntry.grid(column=1, row=21)
-
-uploadNew.grid(column=0, row=23)
-getSpool.grid(column=1, row=23)
-applyChanges.grid(column=2, row=23)
-deleteSpool.grid(column=3, row=23)
 placeholder.grid(column=0, row=24)
 statusText.grid(column=1, row=24)
+
+newSpool.invoke()
 for a in skippedRows:
     window.grid_rowconfigure(a, minsize=10)
     print(a)
