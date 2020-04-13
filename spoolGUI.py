@@ -7,12 +7,15 @@ from oauth2client.service_account import ServiceAccountCredentials
 import inspect
 import qrReader
 import time
+import soundPlayer
 
 #data from first pyscript
 scope = ["https://www.googleapis.com/auth/spreadsheets", "https://www.googleapis.com/auth/drive.file", "https://www.googleapis.com/auth/drive"]
-
-creds = ServiceAccountCredentials.from_json_keyfile_name("C:/Users/Hunter/Documents/Python Scripts/demo/credentials1.json",scope)
-
+try:
+    creds = ServiceAccountCredentials.from_json_keyfile_name("C:/Users/Hunter/Documents/Python Scripts/demo/spoolClient/credentials1.json",scope)
+except:
+    print("No service credentials json found!")
+    exit()
 client = gspread.authorize(creds)
 
 sheet = client.open("spoolData").sheet1
@@ -163,12 +166,16 @@ def applyChanges():
     pass
 
 def deleteRow():
-    try:
-        spoolCell = sheet.find(str(IDEntry.get()))
-        sheet.delete_row(spoolCell.row)
-        updateStatusText("Filament Profile Deleted!")
-    except:
-        updateStatusText("Couldnt find a spool with that ID!")
+    confirmDel = messagebox.askyesno('Confirm Delete?', 'Are you sure you want to delete '+str(IDEntry.get()+'?'))
+    if confirmDel == True:
+        try:
+            spoolCell = sheet.find(str(IDEntry.get()))
+            sheet.delete_row(spoolCell.row)
+            updateStatusText("Filament Profile Deleted!")
+        except:
+            updateStatusText("Couldnt find a spool with that ID!")
+    else:
+        pass
 
 
 def editSpool():
@@ -183,12 +190,15 @@ def editSpool():
 def getQRID():
     setEntryText(IDEntry, qrReader.getQR())
     updateStatusText("QR code has been scanned!")
+    soundPlayer.playChime()
+    
 #create objects
 window = Tk() #create the main window object
 selectorText = Label(window, text="Select Mode: ")
 placeholder = Label(window, text="")
 statusText = Label(window, text="", anchor=CENTER)
 mode = IntVar() #wether we are uploading, editing, or deleting
+
 
 uploadNew = Button(window, text="Upload Spool", command=makeNewSpool)
 getSpool = Button(window, text="Update Spool Info", command=getSpoolData)
