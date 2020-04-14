@@ -83,12 +83,14 @@ def setEntryText(entryName, text):
 
 
 def getSpoolData():
+    changeToMode(5)
     spoolID = IDEntry.get()
     if checkIfCellExists(spoolID) == True:
         spoolCell = sheet.find(spoolID)
         foundSpoolData = sheet.row_values(spoolCell.row)
         for i, x in zip(entryList, foundSpoolData):
             setEntryText(i, x)
+        changeToMode(2)
         updateStatusText("Data Received!")
     else:
         print("no spool has that ID!")
@@ -97,68 +99,100 @@ def getSpoolData():
 #define some variables
 skippedRows = [2, 4, 6, 8, 10, 12, 14, 16, 18, 20, 22]
 #create click functions, etc
+
+def changeToMode(mode):
+    if mode >= 1 or mode <= 4:
+        if mode == 1:
+            uploadNew['state']='enabled'
+            getSpool['state']='disabled'
+            applyChanges['state']='disabled'
+            deleteSpool['state']='disabled'
+            IDEntry['state']='enabled'
+            dateEntry['state']='enabled'
+            materialEntry['state']='enabled'
+            colorEntry['state']='enabled'
+            matEntry['state']='enabled'
+            costPerSpoolEntry['state']='enabled'
+            spoolWeightEntry['state']='enabled'
+            manufacturerEntry['state']='enabled'
+            spoolActive['state']='enabled'
+            commentEntry['state']='enabled'
+        elif mode == 2:
+            uploadNew['state']='disabled'
+            getSpool['state']='enabled'
+            applyChanges['state']='disabled'
+            deleteSpool['state']='disabled'
+            IDEntry['state']='enabled'
+            dateEntry['state']='disabled'
+            materialEntry['state']='disabled'
+            colorEntry['state']='disabled'
+            matEntry['state']='disabled'
+            costPerSpoolEntry['state']='disabled'
+            spoolWeightEntry['state']='disabled'
+            manufacturerEntry['state']='disabled'
+            spoolActive['state']='disabled'
+            commentEntry['state']='disabled'
+        elif mode == 3:
+            uploadNew['state']='disabled'
+            getSpool['state']='disabled'
+            applyChanges['state']='enabled'
+            deleteSpool['state']='disabled'
+            IDEntry['state']='enabled'
+            dateEntry['state']='enabled'
+            materialEntry['state']='enabled'
+            colorEntry['state']='enabled'
+            matEntry['state']='enabled'
+            costPerSpoolEntry['state']='enabled'
+            spoolWeightEntry['state']='enabled'
+            manufacturerEntry['state']='enabled'
+            spoolActive['state']='enabled'
+            commentEntry['state']='enabled'
+        elif mode == 4:
+            uploadNew['state']='disabled'
+            getSpool['state']='disabled'
+            applyChanges['state']='disabled'
+            deleteSpool['state']='enabled'
+            IDEntry['state']='enabled'
+            dateEntry['state']='disabled'
+            materialEntry['state']='disabled'
+            colorEntry['state']='disabled'
+            matEntry['state']='disabled'
+            costPerSpoolEntry['state']='disabled'
+            spoolWeightEntry['state']='disabled'
+            manufacturerEntry['state']='disabled'
+            spoolActive['state']='disabled'
+            commentEntry['state']='disabled'
+        elif mode == 5:
+            uploadNew['state']='disabled'
+            getSpool['state']='enabled'
+            applyChanges['state']='disabled'
+            deleteSpool['state']='disabled'
+            IDEntry['state']='enabled'
+            dateEntry['state']='enabled'
+            materialEntry['state']='enabled'
+            colorEntry['state']='enabled'
+            matEntry['state']='enabled'
+            costPerSpoolEntry['state']='enabled'
+            spoolWeightEntry['state']='enabled'
+            manufacturerEntry['state']='enabled'
+            spoolActive['state']='enabled'
+            commentEntry['state']='enabled'
+
+    else:
+        raise ValueError("changeToMode function only accepts values 1-4!")
 def updateMode():
     currentMode = mode.get()
     if currentMode == 1:
-        uploadNew['state']='enabled'
-        getSpool['state']='disabled'
-        applyChanges['state']='disabled'
-        deleteSpool['state']='disabled'
-        IDEntry['state']='enabled'
-        dateEntry['state']='enabled'
-        materialEntry['state']='enabled'
-        colorEntry['state']='enabled'
-        matEntry['state']='enabled'
-        costPerSpoolEntry['state']='enabled'
-        spoolWeightEntry['state']='enabled'
-        manufacturerEntry['state']='enabled'
-        spoolActive['state']='enabled'
-        commentEntry['state']='enabled'
+        changeToMode(1)
+
     if currentMode == 2:
-        uploadNew['state']='disabled'
-        getSpool['state']='enabled'
-        applyChanges['state']='disabled'
-        deleteSpool['state']='disabled'
-        IDEntry['state']='enabled'
-        dateEntry['state']='enabled'
-        materialEntry['state']='enabled'
-        colorEntry['state']='enabled'
-        matEntry['state']='enabled'
-        costPerSpoolEntry['state']='enabled'
-        spoolWeightEntry['state']='enabled'
-        manufacturerEntry['state']='enabled'
-        spoolActive['state']='enabled'
-        commentEntry['state']='enabled'
+        changeToMode(2)
+
     if currentMode == 3:
-        uploadNew['state']='disabled'
-        getSpool['state']='disabled'
-        applyChanges['state']='enabled'
-        deleteSpool['state']='disabled'
-        IDEntry['state']='enabled'
-        dateEntry['state']='enabled'
-        materialEntry['state']='enabled'
-        colorEntry['state']='enabled'
-        matEntry['state']='enabled'
-        costPerSpoolEntry['state']='enabled'
-        spoolWeightEntry['state']='enabled'
-        manufacturerEntry['state']='enabled'
-        spoolActive['state']='enabled'
-        commentEntry['state']='enabled'
+        changeToMode(3)
+
     if currentMode == 4:
-        uploadNew['state']='disabled'
-        getSpool['state']='disabled'
-        applyChanges['state']='disabled'
-        deleteSpool['state']='enabled'
-        IDEntry['state']='enabled'
-        dateEntry['state']='disabled'
-        materialEntry['state']='disabled'
-        colorEntry['state']='disabled'
-        matEntry['state']='disabled'
-        costPerSpoolEntry['state']='disabled'
-        spoolWeightEntry['state']='disabled'
-        manufacturerEntry['state']='disabled'
-        spoolActive['state']='disabled'
-        commentEntry['state']='disabled'
+        changeToMode(4)
 
 
 
@@ -248,7 +282,8 @@ radButtonList = [newSpool, viewSpool, editSpool, delSpool]
 doButtonList = [uploadNew, getSpool, applyChanges, deleteSpool]
 
 #object methods
-window.title("Filament Storage Client")
+window.title("Filament Storage Client V0.1.1")
+window.iconbitmap('C:/Users/Hunter/Desktop/spool_blue-512.ico')
 window.geometry('500x600')
 
 #locations of objects
