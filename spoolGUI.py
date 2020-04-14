@@ -213,14 +213,17 @@ def deleteRow():
 
 
 def editSpool():
-    try:
-        spoolCell = sheet.find(str(IDEntry.get()))
-        sheet.delete_row(spoolCell.row)
-        makeNewSpool()
-        updateStatusText("Updated Spool "+str(IDEntry.get()) +" Data!")
-    except:
-        updateStatusText("Unable to update "+str(IDEntry.get()) +" Data!")
-
+    confirmEdit = messagebox.askyesno('Confirm Edit?', 'Are you sure you want to edit '+str(IDEntry.get()+'?'))
+    if  confirmEdit == True:
+        try:
+            spoolCell = sheet.find(str(IDEntry.get()))
+            sheet.delete_row(spoolCell.row)
+            makeNewSpool()
+            updateStatusText("Updated Spool "+str(IDEntry.get()) +" Data!")
+        except:
+            updateStatusText("Unable to update "+str(IDEntry.get()) +" Data!")
+    else:
+        pass
 def getQRID():
     setEntryText(IDEntry, qrReader.getQR())
     updateStatusText("QR code has been scanned!")
