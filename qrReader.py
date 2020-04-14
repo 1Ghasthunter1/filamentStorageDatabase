@@ -25,7 +25,7 @@ def getQR():
             qrData.append(obj.data)
 
 
-        cv2.imshow("Frame", frame)
+        cv2.imshow("QR Code Scanner", frame)
 
         if len(qrData)>=10:
             return checkData(qrData)
