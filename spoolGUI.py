@@ -283,7 +283,7 @@ doButtonList = [uploadNew, getSpool, applyChanges, deleteSpool]
 
 #object methods
 window.title("Filament Storage Client V0.1.1")
-window.iconbitmap('C:/Users/Hunter/Desktop/spool_blue-512.ico')
+window.iconbitmap('C:/Users/Hunter/Documents/Python Scripts/demo/SpoolClient/icon.ico')
 window.geometry('500x600')
 
 #locations of objects
