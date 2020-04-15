@@ -8,6 +8,7 @@ import inspect
 import qrReader
 import time
 import soundPlayer
+import qrMaker
 
 #data from first pyscript
 scope = ["https://www.googleapis.com/auth/spreadsheets", "https://www.googleapis.com/auth/drive.file", "https://www.googleapis.com/auth/drive"]
@@ -224,10 +225,16 @@ def editSpool():
             updateStatusText("Unable to update "+str(IDEntry.get()) +" Data!")
     else:
         pass
+    
 def getQRID():
     setEntryText(IDEntry, qrReader.getQR())
     updateStatusText("QR code has been scanned!")
     soundPlayer.playChime()
+
+def generateQR():
+    qrMaker.generateQR(str(IDEntry.get()))
+    updateStatusText("QR code has been saved to \n" + qrMaker.getDesktopPath())
+
     
 #create objects
 window = Tk() #create the main window object
@@ -248,6 +255,7 @@ editSpool = Radiobutton(window,text='Edit Spool', value=3, variable=mode, comman
 delSpool = Radiobutton(window,text='Delete Spool', value=4, variable=mode, command=updateMode)
 
 scanQR = Button(window, text="Scan QR Code", command=getQRID)
+generateQRButton = Button(window, text="Generate QR Code", command=generateQR)
 IDText = Label(window, text="Spool ID:")
 IDEntry = Entry(window, width=25)
 
@@ -292,6 +300,7 @@ window.geometry('500x600')
 #locations of objects
 selectorText.grid(column=0, row=0)
 scanQR.grid(column=2, row=3)
+generateQRButton.grid(column=3, row=3)
 colVar = 0
 for button in radButtonList:
     button.grid(column=colVar, row=1)
@@ -318,4 +327,3 @@ for a in skippedRows:
 
 #main loop
 window.mainloop()
-
