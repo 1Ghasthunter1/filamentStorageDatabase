@@ -10,20 +10,20 @@ import time
 import soundPlayer
 import qrMaker
 import random
+import openWeb
 
 #data from first pyscript
 scope = ["https://www.googleapis.com/auth/spreadsheets", "https://www.googleapis.com/auth/drive.file", "https://www.googleapis.com/auth/drive"]
 try:
-    creds = ServiceAccountCredentials.from_json_keyfile_name("C:/Users/Hunter/Documents/Python Scripts/demo/spoolClient/credentials1.json",scope)
+    creds = ServiceAccountCredentials.from_json_keyfile_name(qrMaker.getCurrentPath()+'credentials.json',scope)
 except:
     print("No service credentials json found!")
     exit()
 client = gspread.authorize(creds)
 
 sheet = client.open("spoolData").sheet1
-
-
-
+#someVars
+spreadsheetURL = "https://docs.google.com/spreadsheets/d/1wb4CJLZfoCH8wG3Q0NkyvpDXZgCp4LNrSXwQwyBGGUM/edit"
 class Spool:
     """A class that stores 9 pieces of data relating to each spool,
     like weight, cost, etc"""
@@ -233,11 +233,16 @@ def editSpool():
     
 def getQRID():
     try:
+        print("step1")
         setEntryText(IDEntry, qrReader.getQR(int(cameraEntry.get())))
+        print(mode.get())
+        if mode.get() == 2:
+            getSpoolData()
+            print("test")
         updateStatusText("QR code has been scanned!")
         soundPlayer.playChime()
     except:
-        updateStatusText("Could not find that camera.")
+        updateStatusText("Unable to scan QR code")
 
 def generateQR():
     if str(IDEntry.get()) == "":
@@ -245,9 +250,14 @@ def generateQR():
 
     else:
         qrMaker.generateQR(str(IDEntry.get()))
-        updateStatusText(str(IDEntry.get())+" QR code has been saved to: \n" + qrMaker.getDesktopPath())
+        updateStatusText(str(IDEntry.get())+" QR code has been saved to: \n" + qrMaker.getFolderPath())
 
-    
+def openChrome():
+    if openWeb.openChrome(spreadsheetURL) == False:
+        updateStatusText("Unable to open spreadsheet.")
+    elif openWeb.openChrome(spreadsheetURL) == True:
+        updateStatusText("Opened spreadsheet!")
+
 #create objects
 window = Tk() #create the main window object
 selectorText = Label(window, text="Select Mode: ")
@@ -275,6 +285,7 @@ generateQRButton = Button(window, text="Generate QR Code", command=generateQR)
 IDText = Label(window, text="Spool ID:")
 IDEntry = Entry(window, width=25)
 generateIDButton = Button(window, text="Generate ID", command=generateSpoolID)
+openBrowserButton = Button(window, text="Open Sheet", command=openChrome)
 
 dateText = Label(window, text="Date Opened:")
 dateEntry = Entry(window, width=25)
@@ -310,8 +321,8 @@ radButtonList = [newSpool, viewSpool, editSpool, delSpool]
 doButtonList = [uploadNew, getSpool, applyChanges, deleteSpool]
 
 #object methods
-window.title("Filament Storage Client V0.1.1")
-window.iconbitmap('C:/Users/Hunter/Documents/Python Scripts/demo/SpoolClient/icon.ico')
+window.title("Filament Storage Client V0.2.1")
+window.iconbitmap(qrMaker.getCurrentPath()+'icon.ico')
 window.geometry('550x600')
 
 #locations of objects
@@ -319,6 +330,8 @@ selectorText.grid(column=0, row=0)
 scanQR.grid(column=2, row=3)
 generateQRButton.grid(column=3, row=3)
 generateIDButton.grid(column=2, row=5)
+openBrowserButton.grid(column=3, row=5)
+
 colVar = 0
 for button in radButtonList:
     button.grid(column=colVar, row=1)
