@@ -255,8 +255,7 @@ def generateQR():
 def openChrome():
     if openWeb.openChrome(spreadsheetURL) == False:
         updateStatusText("Unable to open spreadsheet.")
-    elif openWeb.openChrome(spreadsheetURL) == True:
-        updateStatusText("Opened spreadsheet!")
+
 
 #create objects
 window = Tk() #create the main window object
