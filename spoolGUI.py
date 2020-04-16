@@ -9,6 +9,7 @@ import qrReader
 import time
 import soundPlayer
 import qrMaker
+import random
 
 #data from first pyscript
 scope = ["https://www.googleapis.com/auth/spreadsheets", "https://www.googleapis.com/auth/drive.file", "https://www.googleapis.com/auth/drive"]
@@ -52,7 +53,7 @@ def makeNewSpool():
     date         = dateEntry.get()
     materialID   = materialEntry.get()
     color        = colorEntry.get()
-    matWeight    = matEntry.get()
+    matWeight    = weightEntry.get()
     costPerSpool = costPerSpoolEntry.get()
     spoolWeight  = spoolWeightEntry.get()
     manufacturer = manufacturerEntry.get()
@@ -60,8 +61,9 @@ def makeNewSpool():
     comment      = commentEntry.get()
 
     if checkIfCellExists(str(ID)) == True:
-        print("A spool with that ID already exists!")
         updateStatusText("A spool with that ID already exists!")
+    elif ID == "":
+        updateStatusText("Please enter a spool ID")
     else:
         #create new spool object
         newSpool = Spool(ID, date, materialID, color, matWeight, costPerSpool, spoolWeight, manufacturer, isArchived ,comment)
@@ -70,13 +72,19 @@ def makeNewSpool():
         sheet.insert_row([newSpool.spoolID, newSpool.dateAdded, newSpool.material, newSpool.color, newSpool.materialWeight, newSpool.costPerSpool, newSpool.spoolWeight, newSpool.manufacturer, newSpool.isArchived, newSpool.comment], getNextOpenRow())
         updateStatusText("Spool successfully created!")
 
-def checkIfCellExists(spoolID):
+def generateSpoolID():
+    tempSpoolID = random.randint(100000, 999999)
+    if checkIfCellExists(tempSpoolID) == False:
+        setEntryText(IDEntry, tempSpoolID)
+    elif checkIfCellExists(tempSpoolID) == True:
+        generateSpoolID()
+
+def checkIfCellExists(cellData):
     try:
-        sheet.find(spoolID)
+        sheet.find(str(cellData))
         return True
     except:
         return False
-
 
 def setEntryText(entryName, text):
     entryName.delete(0,"end")
@@ -89,12 +97,12 @@ def getSpoolData():
     if checkIfCellExists(spoolID) == True:
         spoolCell = sheet.find(spoolID)
         foundSpoolData = sheet.row_values(spoolCell.row)
-        for i, x in zip(entryList, foundSpoolData):
+        for i, x in zip(entryList[1:], foundSpoolData):
             setEntryText(i, x)
         changeToMode(2)
         updateStatusText("Data Received!")
     else:
-        print("no spool has that ID!")
+        changeToMode(2)
         updateStatusText("Couldn't find a spool with that ID!")
 
 #define some variables
@@ -112,7 +120,7 @@ def changeToMode(mode):
             dateEntry['state']='enabled'
             materialEntry['state']='enabled'
             colorEntry['state']='enabled'
-            matEntry['state']='enabled'
+            weightEntry['state']='enabled'
             costPerSpoolEntry['state']='enabled'
             spoolWeightEntry['state']='enabled'
             manufacturerEntry['state']='enabled'
@@ -127,7 +135,7 @@ def changeToMode(mode):
             dateEntry['state']='disabled'
             materialEntry['state']='disabled'
             colorEntry['state']='disabled'
-            matEntry['state']='disabled'
+            weightEntry['state']='disabled'
             costPerSpoolEntry['state']='disabled'
             spoolWeightEntry['state']='disabled'
             manufacturerEntry['state']='disabled'
@@ -142,7 +150,7 @@ def changeToMode(mode):
             dateEntry['state']='enabled'
             materialEntry['state']='enabled'
             colorEntry['state']='enabled'
-            matEntry['state']='enabled'
+            weightEntry['state']='enabled'
             costPerSpoolEntry['state']='enabled'
             spoolWeightEntry['state']='enabled'
             manufacturerEntry['state']='enabled'
@@ -157,7 +165,7 @@ def changeToMode(mode):
             dateEntry['state']='disabled'
             materialEntry['state']='disabled'
             colorEntry['state']='disabled'
-            matEntry['state']='disabled'
+            weightEntry['state']='disabled'
             costPerSpoolEntry['state']='disabled'
             spoolWeightEntry['state']='disabled'
             manufacturerEntry['state']='disabled'
@@ -172,7 +180,7 @@ def changeToMode(mode):
             dateEntry['state']='enabled'
             materialEntry['state']='enabled'
             colorEntry['state']='enabled'
-            matEntry['state']='enabled'
+            weightEntry['state']='enabled'
             costPerSpoolEntry['state']='enabled'
             spoolWeightEntry['state']='enabled'
             manufacturerEntry['state']='enabled'
@@ -181,6 +189,7 @@ def changeToMode(mode):
 
     else:
         raise ValueError("changeToMode function only accepts values 1-4!")
+    
 def updateMode():
     currentMode = mode.get()
     if currentMode == 1:
@@ -195,10 +204,6 @@ def updateMode():
     if currentMode == 4:
         changeToMode(4)
 
-
-
-def applyChanges():
-    pass
 
 def deleteRow():
     confirmDel = messagebox.askyesno('Confirm Delete?', 'Are you sure you want to delete '+str(IDEntry.get()+'?'))
@@ -227,13 +232,20 @@ def editSpool():
         pass
     
 def getQRID():
-    setEntryText(IDEntry, qrReader.getQR())
-    updateStatusText("QR code has been scanned!")
-    soundPlayer.playChime()
+    try:
+        setEntryText(IDEntry, qrReader.getQR(int(cameraEntry.get())))
+        updateStatusText("QR code has been scanned!")
+        soundPlayer.playChime()
+    except:
+        updateStatusText("Could not find that camera.")
 
 def generateQR():
-    qrMaker.generateQR(str(IDEntry.get()))
-    updateStatusText("QR code has been saved to \n" + qrMaker.getDesktopPath())
+    if str(IDEntry.get()) == "":
+        updateStatusText("Please enter a spool ID")
+
+    else:
+        qrMaker.generateQR(str(IDEntry.get()))
+        updateStatusText(str(IDEntry.get())+" QR code has been saved to: \n" + qrMaker.getDesktopPath())
 
     
 #create objects
@@ -242,7 +254,6 @@ selectorText = Label(window, text="Select Mode: ")
 placeholder = Label(window, text="")
 statusText = Label(window, text="", anchor=CENTER)
 mode = IntVar() #wether we are uploading, editing, or deleting
-
 
 uploadNew = Button(window, text="Upload Spool", command=makeNewSpool)
 getSpool = Button(window, text="Update Spool Info", command=getSpoolData)
@@ -254,10 +265,16 @@ viewSpool = Radiobutton(window,text='View Spool Data', value=2, variable=mode, c
 editSpool = Radiobutton(window,text='Edit Spool', value=3, variable=mode, command=updateMode)
 delSpool = Radiobutton(window,text='Delete Spool', value=4, variable=mode, command=updateMode)
 
+cameraText = Label(window, width=22, text="Available Cameras:")
+cameraEntry = Combobox(window, width=22, values=qrReader.getCameras())
+setEntryText(cameraEntry, "0")
+
 scanQR = Button(window, text="Scan QR Code", command=getQRID)
 generateQRButton = Button(window, text="Generate QR Code", command=generateQR)
+
 IDText = Label(window, text="Spool ID:")
 IDEntry = Entry(window, width=25)
+generateIDButton = Button(window, text="Generate ID", command=generateSpoolID)
 
 dateText = Label(window, text="Date Opened:")
 dateEntry = Entry(window, width=25)
@@ -268,8 +285,8 @@ materialEntry = Combobox(window, width=22, values=("PLA","ABS","PETG","Nylon","C
 colorText = Label(window, text="Color:")
 colorEntry = Entry(window, width=25)
 
-matText = Label(window, text="Filament Weight:")
-matEntry = Entry(window, width=25)
+weightText = Label(window, text="Filament Weight:")
+weightEntry = Entry(window, width=25)
 
 costPerSpoolText = Label(window, text="Cost per Spool:")
 costPerSpoolEntry = Entry(window, width=25)
@@ -287,20 +304,21 @@ commentText = Label(window, text="Comments:")
 commentEntry = Entry(window, width=25)
 
 
-entryList = [IDEntry, dateEntry, materialEntry, colorEntry, matEntry, costPerSpoolEntry, spoolWeightEntry, manufacturerEntry, spoolActive, commentEntry]
-textList  = [IDText, dateText, materialText, colorText, matText, costPerSpoolText, spoolWeightText, manufacturerText, spoolActiveText, commentText]
+entryList = [cameraEntry, IDEntry, dateEntry, materialEntry, colorEntry, weightEntry, costPerSpoolEntry, spoolWeightEntry, manufacturerEntry, spoolActive, commentEntry]
+textList  = [cameraText, IDText, dateText, materialText, colorText, weightText, costPerSpoolText, spoolWeightText, manufacturerText, spoolActiveText, commentText]
 radButtonList = [newSpool, viewSpool, editSpool, delSpool]
 doButtonList = [uploadNew, getSpool, applyChanges, deleteSpool]
 
 #object methods
 window.title("Filament Storage Client V0.1.1")
 window.iconbitmap('C:/Users/Hunter/Documents/Python Scripts/demo/SpoolClient/icon.ico')
-window.geometry('500x600')
+window.geometry('550x600')
 
 #locations of objects
 selectorText.grid(column=0, row=0)
 scanQR.grid(column=2, row=3)
 generateQRButton.grid(column=3, row=3)
+generateIDButton.grid(column=2, row=5)
 colVar = 0
 for button in radButtonList:
     button.grid(column=colVar, row=1)
@@ -314,16 +332,15 @@ for text, entry in zip(textList, entryList):
 
 colVar = 0
 for button in doButtonList:
-    button.grid(column=colVar, row=23)
+    button.grid(column=colVar, row=25)
     colVar +=1
 
-placeholder.grid(column=0, row=24)
-statusText.grid(column=1, row=24)
+placeholder.grid(column=0, row=26)
+statusText.grid(column=1, row=26)
 
 newSpool.invoke()
 for a in skippedRows:
     window.grid_rowconfigure(a, minsize=10)
-    print(a)
 
 #main loop
 window.mainloop()

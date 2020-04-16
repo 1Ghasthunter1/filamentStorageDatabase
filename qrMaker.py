@@ -19,5 +19,5 @@ def generateQR(qrData):
 def getDesktopPath():
         return desktop
 
-generateQR("1234567")
+
 

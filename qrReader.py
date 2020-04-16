@@ -11,12 +11,12 @@ def checkData(list):
     cv2.destroyAllWindows()
     return max(dataValues, key=dataValues.get)
 
-def getQR():
+def getQR(cameraID):
     qrData=[]
     try:
-        video = cv2.VideoCapture(0)
+        video = cv2.VideoCapture(cameraID)
     except:
-        raise ValueError("Unable to open camera!")
+        raise NameError("Could not access the camera, for some weird reason")
     while True:
         _, frame = video.read()
 
@@ -25,7 +25,7 @@ def getQR():
             qrData.append(obj.data)
 
 
-        cv2.imshow("QR Code Scanner", frame)
+        cv2.imshow("QR Code Scanner, press ESC to exit", frame)
 
         if len(qrData)>=10:
             return checkData(qrData)
@@ -36,3 +36,15 @@ def getQR():
             cv2.destroyAllWindows()
             break
 
+def getCameras():
+    index = 0
+    cameraArray = []
+    while True:
+        test = cv2.VideoCapture(index)
+        if not test.read()[0]:
+            break
+        else:
+            cameraArray.append(index)
+        test.release()
+        index +=1
+    return cameraArray
