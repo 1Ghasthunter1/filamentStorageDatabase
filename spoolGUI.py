@@ -195,6 +195,7 @@ def changeToMode(mode):
     
 def updateMode():
     currentMode = mode.get()
+    print(mode.get())
     if currentMode == 1:
         changeToMode(1)
 
@@ -206,6 +207,7 @@ def updateMode():
 
     if currentMode == 4:
         changeToMode(4)
+
 
 
 def deleteRow():
@@ -264,7 +266,7 @@ def preferences():
     pass
 
 #create objects
-window = Tk() #create the main window object
+window = Toplevel() #create the main window object
 selectorText = Label(window, text="Select Mode: ")
 placeholder = Label(window, text="")
 statusText = Label(window, text="", anchor=CENTER)
