@@ -11,6 +11,7 @@ import soundPlayer
 import qrMaker
 import random
 import openWeb
+import menuScript
 
 #data from first pyscript
 scope = ["https://www.googleapis.com/auth/spreadsheets", "https://www.googleapis.com/auth/drive.file", "https://www.googleapis.com/auth/drive"]
@@ -24,6 +25,8 @@ client = gspread.authorize(creds)
 sheet = client.open("spoolData").sheet1
 #someVars
 spreadsheetURL = "https://docs.google.com/spreadsheets/d/1wb4CJLZfoCH8wG3Q0NkyvpDXZgCp4LNrSXwQwyBGGUM/edit"
+qrInches = 4 #height of generated QR code in inches
+
 class Spool:
     """A class that stores 9 pieces of data relating to each spool,
     like weight, cost, etc"""
@@ -249,13 +252,16 @@ def generateQR():
         updateStatusText("Please enter a spool ID")
 
     else:
-        qrMaker.generateQR(str(IDEntry.get()))
+        qrMaker.generateQR(str(IDEntry.get()), qrInches)
         updateStatusText(str(IDEntry.get())+" QR code has been saved to: \n" + qrMaker.getFolderPath())
 
 def openChrome():
     if openWeb.openChrome(spreadsheetURL) == False:
         updateStatusText("Unable to open spreadsheet.")
 
+def preferences():
+    #menuScript.openPreferences()
+    pass
 
 #create objects
 window = Tk() #create the main window object
@@ -263,6 +269,16 @@ selectorText = Label(window, text="Select Mode: ")
 placeholder = Label(window, text="")
 statusText = Label(window, text="", anchor=CENTER)
 mode = IntVar() #wether we are uploading, editing, or deleting
+
+
+menuBar = Menu(window)
+filemenu = Menu(menuBar, tearoff=0)
+helpMenu = Menu(menuBar, tearoff=0)
+filemenu.add_command(label = "Preferences", command = preferences)
+filemenu.add_separator()
+filemenu.add_command(label="Exit", command=window.quit)
+menuBar.add_cascade(label="File", menu=filemenu)
+
 
 uploadNew = Button(window, text="Upload Spool", command=makeNewSpool)
 getSpool = Button(window, text="Update Spool Info", command=getSpoolData)
@@ -324,6 +340,8 @@ window.title("Filament Storage Client V0.2.1")
 window.iconbitmap(qrMaker.getCurrentPath()+'icon.ico')
 window.geometry('550x600')
 
+window.config(menu=menuBar)
+
 #locations of objects
 selectorText.grid(column=0, row=0)
 scanQR.grid(column=2, row=3)
@@ -350,9 +368,11 @@ for button in doButtonList:
 placeholder.grid(column=0, row=26)
 statusText.grid(column=1, row=26)
 
-newSpool.invoke()
 for a in skippedRows:
     window.grid_rowconfigure(a, minsize=10)
 
+newSpool.invoke()
 #main loop
 window.mainloop()
+menuScript.preferences.quit()
+qrMaker.dpiWindow.quit()
