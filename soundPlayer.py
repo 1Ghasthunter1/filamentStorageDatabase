@@ -1,3 +1,5 @@
 from playsound import playsound
+import qrMaker
 def playChime():
-    playsound('C:/Users/Hunter/Documents/Python Scripts/demo/spoolClient/sounds/qrChime.wav')
+    currentLoc=qrMaker.getCurrentPath()
+    playsound(f'{currentLoc}/sounds/qrChime.wav')
