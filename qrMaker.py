@@ -33,7 +33,7 @@ def getDesktopPath():
     return desktop
 
 def getCurrentPath():
-    return (os.path.dirname(__file__)+'/')
+    return (os.path.dirname(__file__)+'\\')
 
 def getFolderPath():
     return getDesktopPath()+folderName

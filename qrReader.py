@@ -14,7 +14,7 @@ def checkData(list):
 def getQR(cameraID):
     qrData=[]
     try:
-        video = cv2.VideoCapture(cameraID)
+        video = cv2.VideoCapture(cameraID, cv2.CAP_DSHOW)
     except:
         raise NameError("Could not access the camera, for some weird reason")
     while True:
@@ -28,11 +28,13 @@ def getQR(cameraID):
         cv2.imshow("QR Code Scanner, press ESC to exit", frame)
 
         if len(qrData)>=10:
+            video.release()
             return checkData(qrData)
             
 
         key=cv2.waitKey(1)
         if key == 27:
+            video.release()
             cv2.destroyAllWindows()
             break
 

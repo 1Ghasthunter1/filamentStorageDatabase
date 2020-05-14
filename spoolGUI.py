@@ -12,11 +12,15 @@ import qrMaker
 import random
 import openWeb
 import menuScript
+import jsonOperation
+import os
+import assignPrinter
 
 #data from first pyscript
+jsonPath = os.path.join(qrMaker.getCurrentPath(), "config\\settings.json")
 scope = ["https://www.googleapis.com/auth/spreadsheets", "https://www.googleapis.com/auth/drive.file", "https://www.googleapis.com/auth/drive"]
 try:
-    creds = ServiceAccountCredentials.from_json_keyfile_name(qrMaker.getCurrentPath()+'credentials.json',scope)
+    creds = ServiceAccountCredentials.from_json_keyfile_name(jsonOperation.readFromJson('credentialsJsonEntry', jsonPath),scope)
 except:
     print("No service credentials json found!")
     exit()
@@ -24,7 +28,7 @@ client = gspread.authorize(creds)
 
 sheet = client.open("spoolData").sheet1
 #someVars
-spreadsheetURL = "https://docs.google.com/spreadsheets/d/1wb4CJLZfoCH8wG3Q0NkyvpDXZgCp4LNrSXwQwyBGGUM/edit"
+spreadsheetURL = jsonOperation.readFromJson("sheetEntry", jsonPath)
 qrInches = 4 #height of generated QR code in inches
 
 class Spool:
@@ -47,8 +51,8 @@ def getNextOpenRow(): #returns the row # as an integer of the next available row
     nextOpenRow = len(itemList)+1
     return nextOpenRow
 
-def updateStatusText(string1):
-    statusText['text']=string1
+def updateStatusText(text):
+    statusText['text']=text
 
 def makeNewSpool():
     #gather data about new spool
@@ -112,6 +116,7 @@ def getSpoolData():
 skippedRows = [2, 4, 6, 8, 10, 12, 14, 16, 18, 20, 22]
 #create click functions, etc
 
+currentMode = 0
 def changeToMode(mode):
     if mode >= 1 or mode <= 4:
         if mode == 1:
@@ -189,25 +194,11 @@ def changeToMode(mode):
             manufacturerEntry['state']='enabled'
             spoolActive['state']='enabled'
             commentEntry['state']='enabled'
+        currentMode = mode
 
     else:
         raise ValueError("changeToMode function only accepts values 1-4!")
     
-def updateMode():
-    currentMode = mode.get()
-    print(mode.get())
-    if currentMode == 1:
-        changeToMode(1)
-
-    if currentMode == 2:
-        changeToMode(2)
-
-    if currentMode == 3:
-        changeToMode(3)
-
-    if currentMode == 4:
-        changeToMode(4)
-
 
 
 def deleteRow():
@@ -239,11 +230,9 @@ def editSpool():
 def getQRID():
     try:
         print("step1")
-        setEntryText(IDEntry, qrReader.getQR(int(cameraEntry.get())))
-        print(mode.get())
-        if mode.get() == 2:
+        setEntryText(IDEntry, qrReader.getQR(int(jsonOperation.readFromJson("cameraEntry", jsonPath))))
+        if currentMode == 2:
             getSpoolData()
-            print("test")
         updateStatusText("QR code has been scanned!")
         soundPlayer.playChime()
     except:
@@ -262,39 +251,20 @@ def openChrome():
         updateStatusText("Unable to open spreadsheet.")
 
 def preferences():
-    #menuScript.openPreferences()
-    pass
+    menuScript.openPreferences()
+
+
 
 #create objects
 window = Toplevel() #create the main window object
-selectorText = Label(window, text="Select Mode: ")
 placeholder = Label(window, text="")
 statusText = Label(window, text="", anchor=CENTER)
-mode = IntVar() #wether we are uploading, editing, or deleting
-
-
-menuBar = Menu(window)
-filemenu = Menu(menuBar, tearoff=0)
-helpMenu = Menu(menuBar, tearoff=0)
-filemenu.add_command(label = "Preferences", command = preferences)
-filemenu.add_separator()
-filemenu.add_command(label="Exit", command=window.quit)
-menuBar.add_cascade(label="File", menu=filemenu)
 
 
 uploadNew = Button(window, text="Upload Spool", command=makeNewSpool)
 getSpool = Button(window, text="Update Spool Info", command=getSpoolData)
 applyChanges = Button(window, text="Apply Changes", command=editSpool)
 deleteSpool = Button(window, text="Delete Spool", command=deleteRow)
-
-newSpool = Radiobutton(window,text='New Spool', value=1, variable=mode, command=updateMode) #create mode selector button objects
-viewSpool = Radiobutton(window,text='View Spool Data', value=2, variable=mode, command=updateMode)
-editSpool = Radiobutton(window,text='Edit Spool', value=3, variable=mode, command=updateMode)
-delSpool = Radiobutton(window,text='Delete Spool', value=4, variable=mode, command=updateMode)
-
-cameraText = Label(window, width=22, text="Available Cameras:")
-cameraEntry = Combobox(window, width=22, values=qrReader.getCameras())
-setEntryText(cameraEntry, "0")
 
 scanQR = Button(window, text="Scan QR Code", command=getQRID)
 generateQRButton = Button(window, text="Generate QR Code", command=generateQR)
@@ -332,10 +302,42 @@ commentText = Label(window, text="Comments:")
 commentEntry = Entry(window, width=25)
 
 
-entryList = [cameraEntry, IDEntry, dateEntry, materialEntry, colorEntry, weightEntry, costPerSpoolEntry, spoolWeightEntry, manufacturerEntry, spoolActive, commentEntry]
-textList  = [cameraText, IDText, dateText, materialText, colorText, weightText, costPerSpoolText, spoolWeightText, manufacturerText, spoolActiveText, commentText]
-radButtonList = [newSpool, viewSpool, editSpool, delSpool]
+entryList = [IDEntry, dateEntry, materialEntry, colorEntry, weightEntry, costPerSpoolEntry, spoolWeightEntry, manufacturerEntry, spoolActive, commentEntry]
+textList  = [IDText, dateText, materialText, colorText, weightText, costPerSpoolText, spoolWeightText, manufacturerText, spoolActiveText, commentText]
 doButtonList = [uploadNew, getSpool, applyChanges, deleteSpool]
+
+
+#menu functions
+def addNewSpoolMode():
+    changeToMode(1)
+
+def viewSpoolMode():
+    changeToMode(2)
+
+def editSpoolMode():
+    changeToMode(3)
+
+def deleteSpoolMode():
+    changeToMode(4)
+
+def assignPrinterMode():
+    assignPrinter.assignPrinterWindow()
+
+#Configure Menus
+menuBar = Menu(window)
+filemenu = Menu(menuBar, tearoff=0)
+filemenu.add_command(label = "Preferences", command = preferences)
+filemenu.add_separator()
+filemenu.add_command(label="Exit", command=window.quit)
+
+actionmenu = Menu(menuBar, tearoff=0)
+actionmenu.add_command(label = "Add Spool", command=addNewSpoolMode)
+actionmenu.add_command(label = "View Spool", command=viewSpoolMode)
+actionmenu.add_command(label = "Assign Printer", command=assignPrinterMode)
+actionmenu.add_command(label = "Edit Spool", command=editSpoolMode)
+actionmenu.add_command(label = "Delete Spool", command=deleteSpoolMode)
+menuBar.add_cascade(label="File", menu=filemenu)
+menuBar.add_cascade(label="Actions", menu=actionmenu)
 
 #object methods
 window.title("Filament Storage Client V0.2.1")
@@ -345,16 +347,10 @@ window.geometry('550x600')
 window.config(menu=menuBar)
 
 #locations of objects
-selectorText.grid(column=0, row=0)
 scanQR.grid(column=2, row=3)
 generateQRButton.grid(column=3, row=3)
 generateIDButton.grid(column=2, row=5)
 openBrowserButton.grid(column=3, row=5)
-
-colVar = 0
-for button in radButtonList:
-    button.grid(column=colVar, row=1)
-    colVar += 1
 
 rowVar = 3
 for text, entry in zip(textList, entryList):
@@ -373,8 +369,8 @@ statusText.grid(column=1, row=26)
 for a in skippedRows:
     window.grid_rowconfigure(a, minsize=10)
 
-newSpool.invoke()
 #main loop
+changeToMode(1)
 window.mainloop()
-menuScript.preferences.quit()
 qrMaker.dpiWindow.quit()
+window.quit()
