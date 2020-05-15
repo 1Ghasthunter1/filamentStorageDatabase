@@ -15,26 +15,16 @@ import menuScript
 import jsonOperation
 import os
 import assignPrinter
-
+import sheetOperation
 #data from first pyscript
 jsonPath = os.path.join(qrMaker.getCurrentPath(), "config\\settings.json")
-scope = ["https://www.googleapis.com/auth/spreadsheets", "https://www.googleapis.com/auth/drive.file", "https://www.googleapis.com/auth/drive"]
-try:
-    creds = ServiceAccountCredentials.from_json_keyfile_name(jsonOperation.readFromJson('credentialsJsonEntry', jsonPath),scope)
-except:
-    print("No service credentials json found!")
-    exit()
-client = gspread.authorize(creds)
-
-sheet = client.open("spoolData").sheet1
 #someVars
 spreadsheetURL = jsonOperation.readFromJson("sheetEntry", jsonPath)
-qrInches = 4 #height of generated QR code in inches
 
 class Spool:
     """A class that stores 9 pieces of data relating to each spool,
     like weight, cost, etc"""
-    def __init__(self, spoolID, dateAdded, material, color, materialWeight, costPerSpool, spoolWeight, manufacturer, isArchived, comment):
+    def __init__(self, spoolID, dateAdded, material, color, materialWeight, costPerSpool, spoolWeight, manufacturer, isArchived, activePrinter, comment):
         self.spoolID = spoolID #6 digit spool ID
         self.dateAdded = dateAdded #mmddyyyy
         self.material = material #PLA, PETG, NYLON, ABS, etc.
@@ -44,54 +34,55 @@ class Spool:
         self.spoolWeight = spoolWeight # weight of the spool in grams
         self.manufacturer = manufacturer #spool manufacturer
         self.isArchived = isArchived
+        self.activePrinter = activePrinter
         self.comment = comment #comments about spool
-
-def getNextOpenRow(): #returns the row # as an integer of the next available row on the spreadsheet
-    itemList = sheet.col_values(1)
-    nextOpenRow = len(itemList)+1
-    return nextOpenRow
 
 def updateStatusText(text):
     statusText['text']=text
 
 def makeNewSpool():
     #gather data about new spool
-    ID           = IDEntry.get()
-    date         = dateEntry.get()
-    materialID   = materialEntry.get()
-    color        = colorEntry.get()
-    matWeight    = weightEntry.get()
-    costPerSpool = costPerSpoolEntry.get()
-    spoolWeight  = spoolWeightEntry.get()
-    manufacturer = manufacturerEntry.get()
-    isArchived   = spoolActive.get()
-    comment      = commentEntry.get()
+    ID            = IDEntry.get()
+    date          = dateEntry.get()
+    materialID    = materialEntry.get()
+    color         = colorEntry.get()
+    matWeight     = weightEntry.get()
+    costPerSpool  = costPerSpoolEntry.get()
+    spoolWeight   = spoolWeightEntry.get()
+    manufacturer  = manufacturerEntry.get()
+    isArchived    = spoolActive.get()
+    activePrinter = "None"
+    comment       = commentEntry.get()
 
-    if checkIfCellExists(str(ID)) == True:
+    if sheetOperation.checkIfCellExists(str(ID)) == True:
         updateStatusText("A spool with that ID already exists!")
     elif ID == "":
         updateStatusText("Please enter a spool ID")
     else:
         #create new spool object
-        newSpool = Spool(ID, date, materialID, color, matWeight, costPerSpool, spoolWeight, manufacturer, isArchived ,comment)
+        newSpool = Spool(ID, date, materialID, color, matWeight, costPerSpool, spoolWeight, manufacturer, isArchived ,activePrinter, comment)
 
         #upload new spool data to spreadsheet in new row
-        sheet.insert_row([newSpool.spoolID, newSpool.dateAdded, newSpool.material, newSpool.color, newSpool.materialWeight, newSpool.costPerSpool, newSpool.spoolWeight, newSpool.manufacturer, newSpool.isArchived, newSpool.comment], getNextOpenRow())
+        newSpoolList = [newSpool.spoolID,
+                        newSpool.dateAdded,
+                        newSpool.material,
+                        newSpool.color,
+                        newSpool.materialWeight,
+                        newSpool.costPerSpool,
+                        newSpool.spoolWeight,
+                        newSpool.manufacturer,
+                        newSpool.isArchived,
+                        newSpool.activePrinter,
+                        newSpool.comment]
+        sheetOperation.insertRow(newSpoolList, sheetOperation.getNextOpenRow())
         updateStatusText("Spool successfully created!")
 
 def generateSpoolID():
     tempSpoolID = random.randint(100000, 999999)
-    if checkIfCellExists(tempSpoolID) == False:
+    if sheetOperation.checkIfCellExists(tempSpoolID) == False:
         setEntryText(IDEntry, tempSpoolID)
-    elif checkIfCellExists(tempSpoolID) == True:
+    elif sheetOperation.checkIfCellExists(tempSpoolID) == True:
         generateSpoolID()
-
-def checkIfCellExists(cellData):
-    try:
-        sheet.find(str(cellData))
-        return True
-    except:
-        return False
 
 def setEntryText(entryName, text):
     entryName.delete(0,"end")
@@ -101,19 +92,29 @@ def setEntryText(entryName, text):
 def getSpoolData():
     changeToMode(5)
     spoolID = IDEntry.get()
-    if checkIfCellExists(spoolID) == True:
-        spoolCell = sheet.find(spoolID)
-        foundSpoolData = sheet.row_values(spoolCell.row)
-        for i, x in zip(entryList[1:], foundSpoolData):
-            setEntryText(i, x)
-        changeToMode(2)
+    spoolData = sheetOperation.getSpoolData(spoolID)
+    if spoolData != False:
+        for i, x in zip(entryList[0:], spoolData):
+            if type(i) == type(IDEntry) or type(i) == type(materialEntry):
+                setEntryText(i, x)
+            elif type(i) == type(statusText):
+                i['text'] = x
+            else:
+                pass
         updateStatusText("Data Received!")
+        changeToMode(2)
     else:
         changeToMode(2)
         updateStatusText("Couldn't find a spool with that ID!")
 
 #define some variables
-skippedRows = [2, 4, 6, 8, 10, 12, 14, 16, 18, 20, 22]
+skippedRows = [2, 4, 6, 8, 10, 12, 14, 16, 18, 20, 22, 24, 26, 28]
+def getMaterials():
+    materialsList = jsonOperation.readFromJson("materialEntry", jsonPath)
+    materialsList = materialsList.replace(" ", "")
+    materialsList = materialsList.split(",")
+    materialsList.insert(len(materialsList), "Other")
+    return materialsList
 #create click functions, etc
 
 currentMode = 0
@@ -198,38 +199,22 @@ def changeToMode(mode):
 
     else:
         raise ValueError("changeToMode function only accepts values 1-4!")
-    
-
-
-def deleteRow():
-    confirmDel = messagebox.askyesno('Confirm Delete?', 'Are you sure you want to delete '+str(IDEntry.get()+'?'))
-    if confirmDel == True:
-        try:
-            spoolCell = sheet.find(str(IDEntry.get()))
-            sheet.delete_row(spoolCell.row)
-            updateStatusText("Filament Profile Deleted!")
-        except:
-            updateStatusText("Couldnt find a spool with that ID!")
-    else:
-        pass
 
 
 def editSpool():
     confirmEdit = messagebox.askyesno('Confirm Edit?', 'Are you sure you want to edit '+str(IDEntry.get()+'?'))
     if  confirmEdit == True:
         try:
-            spoolCell = sheet.find(str(IDEntry.get()))
-            sheet.delete_row(spoolCell.row)
-            makeNewSpool()
-            updateStatusText("Updated Spool "+str(IDEntry.get()) +" Data!")
+            spoolCell = sheetOperation.getCell(IDEntry.get())
+            if spoolCell != False:
+                sheetOperation.deleteRow(IDEntry.get(), False)
+                makeNewSpool()
+                updateStatusText(f"Updated Spool {IDEntry.get()} Data!")
         except:
-            updateStatusText("Unable to update "+str(IDEntry.get()) +" Data!")
-    else:
-        pass
+            updateStatusText(f"Unable to update {IDEntry.get()} Data!")
     
 def getQRID():
     try:
-        print("step1")
         setEntryText(IDEntry, qrReader.getQR(int(jsonOperation.readFromJson("cameraEntry", jsonPath))))
         if currentMode == 2:
             getSpoolData()
@@ -243,7 +228,14 @@ def generateQR():
         updateStatusText("Please enter a spool ID")
 
     else:
-        qrMaker.generateQR(str(IDEntry.get()), qrInches)
+        qrData = str(IDEntry.get())
+        qrWidth = float(jsonOperation.readFromJson("qrWidthEntry", jsonPath))
+        print(qrWidth)
+        qrHeight = float(jsonOperation.readFromJson("qrHeightEntry", jsonPath))
+        print(qrHeight)
+        qrMode = int(jsonOperation.readFromJson("qrModeValue", jsonPath))
+        print(qrMode)
+        qrMaker.generateQR(qrData, qrWidth, qrHeight, qrMode)
         updateStatusText(str(IDEntry.get())+" QR code has been saved to: \n" + qrMaker.getFolderPath())
 
 def openChrome():
@@ -253,6 +245,11 @@ def openChrome():
 def preferences():
     menuScript.openPreferences()
 
+def deleteRow():
+    if sheetOperation.deleteRow(IDEntry.get(), True):
+        updateStatusText(f"Successfully deleted spool {IDEntry.get()}")
+    else:
+        updateStatusText(f"Unable to delete spool {IDEntry.get()}")
 
 
 #create objects
@@ -278,7 +275,7 @@ dateText = Label(window, text="Date Opened:")
 dateEntry = Entry(window, width=25)
 
 materialText = Label(window, text="Material:")
-materialEntry = Combobox(window, width=22, values=("PLA","ABS","PETG","Nylon","Conductive"))
+materialEntry = Combobox(window, width=22, values=getMaterials())
 
 colorText = Label(window, text="Color:")
 colorEntry = Entry(window, width=25)
@@ -298,12 +295,15 @@ manufacturerEntry = Entry(window, width=25)
 spoolActiveText = Label(window, text="Spool active: ")
 spoolActive = Combobox(window, width=22, values=("Deactive", "Active"))
 
+currentPrinterText = Label(window, text="Current Printer:")
+currentPrinterMode = Label(window, text="None")
+
 commentText = Label(window, text="Comments:")
 commentEntry = Entry(window, width=25)
 
 
-entryList = [IDEntry, dateEntry, materialEntry, colorEntry, weightEntry, costPerSpoolEntry, spoolWeightEntry, manufacturerEntry, spoolActive, commentEntry]
-textList  = [IDText, dateText, materialText, colorText, weightText, costPerSpoolText, spoolWeightText, manufacturerText, spoolActiveText, commentText]
+entryList = [IDEntry, dateEntry, materialEntry, colorEntry, weightEntry, costPerSpoolEntry, spoolWeightEntry, manufacturerEntry, spoolActive, currentPrinterMode, commentEntry]
+textList  = [IDText, dateText, materialText, colorText, weightText, costPerSpoolText, spoolWeightText, manufacturerText, spoolActiveText, currentPrinterText, commentText]
 doButtonList = [uploadNew, getSpool, applyChanges, deleteSpool]
 
 
@@ -340,7 +340,7 @@ menuBar.add_cascade(label="File", menu=filemenu)
 menuBar.add_cascade(label="Actions", menu=actionmenu)
 
 #object methods
-window.title("Filament Storage Client V0.2.1")
+window.title("Filament Storage Client alpha 0.3.2")
 window.iconbitmap(qrMaker.getCurrentPath()+'icon.ico')
 window.geometry('550x600')
 

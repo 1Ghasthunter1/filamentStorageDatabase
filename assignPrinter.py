@@ -7,7 +7,11 @@ import soundPlayer
 import jsonOperation
 import os
 import qrMaker
+import sheetOperation
+
 skippedRows = [1, 3, 5, 7, 9, 11]
+activePrinterColumn = 10 #according to google sheets
+
 jsonPath = os.path.join(qrMaker.getCurrentPath(), "config\\settings.json")
 activePrinter = StringVar()
 def assignPrinterWindow():
@@ -18,8 +22,10 @@ def assignPrinterWindow():
         data = data.replace(" ", "")
         data = data.split(",")
         data.insert(0, "")
+        data.insert(len(data), "None")
         return data
     printerList = getPrinterList()
+    activePrinter.set(printerList[2])
     def getQRID():
         try:
             scanQREntry.delete(0, "end")
@@ -27,8 +33,13 @@ def assignPrinterWindow():
             statusText['text'] = "Successfully scanned QR Code"
         except:
             statusText['text'] = "Unable to scan QR Code"
+    def changePrinter(cell, data):
+        cell = sheetOperation.getCell(cell)
+        if cell:
+            sheetOperation.updateCell(cell.row, activePrinterColumn, data)
+        else:
+            print('couldnt fetch cell')
     assignPrinter = Tk()
-    statusText = Label(assignPrinter, width=25)
 
     assignPrinter.title("Add Spool to Printer")
     assignPrinter.iconbitmap(qrMaker.getCurrentPath()+'icon.ico')
@@ -41,8 +52,8 @@ def assignPrinterWindow():
     printerText = Label(assignPrinter, width=20, text="Select active printer:")
     printerEntry = OptionMenu(assignPrinter, activePrinter, *printerList)
 
-    uploadText = Label(assignPrinter, width=20, text="Assign Printer")
-    uploadButton = Button(assignPrinter, width=20, text="Save Changes")
+    uploadText = Label(assignPrinter, width=15, text="Assign Printer")
+    uploadButton = Button(assignPrinter, width=20, text="Save Changes", command=lambda:changePrinter(scanQREntry.get(), activePrinter.get()))
 
     statusText = Label(assignPrinter, width=25)
 
@@ -58,7 +69,6 @@ def assignPrinterWindow():
         row+=2
     scanQRButton.grid(column=2, row=2)
     statusText.grid(column=0, row=row+2)
-    getPrinterList()
     assignPrinter.mainloop()
     assignPrinter.quit()
  
