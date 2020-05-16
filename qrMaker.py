@@ -64,7 +64,10 @@ def generateQR(qrData, width, height, mode):
             img = qrcode.make(qrData)
             img = img.resize((inchToPixels(width),inchToPixels(width)))
             draw = ImageDraw.Draw(img)
-            font = ImageFont.truetype(f'{getCurrentPath}fonts\\entsans.ttf', textTextScale)
+            try:
+                font = ImageFont.truetype(r'C:\Users\Hunter\Documents\Filament Client\fonts', textTextScale)
+            except:
+                font=None
             draw.text((textHScale, textVScale), f"ID: {qrData} ", 0, font=font)
             draw.rectangle([(rectScale1, rectScale1), (rectScale2,rectScale2)],
                 fill = None,
@@ -94,7 +97,10 @@ def generateQR(qrData, width, height, mode):
             qrOutput = qrOutput.resize((inchToPixels(height), inchToPixels(height)))
             img.paste(qrOutput)
             draw = ImageDraw.Draw(img)
-            font = ImageFont.truetype(f'{getCurrentPath}fonts\\entsans.ttf', textTextScale)
+            try:
+                font = ImageFont.truetype('fonts\entsans.ttf', textTextScale)
+            except:
+                font = None
             draw.text((textHScale, textVScale), f"Spool ID:\n{qrData}", 0, font=font)
             draw.rectangle([(x1, y1), (x2, y2)],
                 fill = None,
@@ -106,5 +112,7 @@ def generateQR(qrData, width, height, mode):
         raise ValueError("generateQR Function requires string input!")
 
 def getFont():
-    font = ImageFont.truetype(f'{getCurrentPath}fonts\\entsans.ttf', 20)
+    font = ImageFont.truetype('fonts\entsans.ttf', 20)
     return font
+
+generateQR("TESTDATA", 2, 1, 1)
