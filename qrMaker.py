@@ -115,4 +115,3 @@ def getFont():
     font = ImageFont.truetype('fonts\entsans.ttf', 20)
     return font
 
-generateQR("TESTDATA", 2, 1, 1)
