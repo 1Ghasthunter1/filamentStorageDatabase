@@ -22,7 +22,7 @@ pylint==2.4.4
 pyzbar==0.1.8
 qrcode==6.1
 requests==2.23.0
-rsa==4.0
+rsa==4.7
 six==1.14.0
 urllib3==1.25.8
 wrapt==1.11.2
